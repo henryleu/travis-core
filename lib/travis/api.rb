@@ -15,8 +15,14 @@ module Travis
       def builder(resource, options = {})
         target  = (options[:for] || 'http').to_s.camelize
         version = (options[:version] || default_version(options)).to_s.camelize
-        type    = (options[:type] || type_for(resource)).to_s.camelize
-        [name, version, target, type].join('::').constantize rescue nil
+        type    = (options[:type] || type_for(resource)).to_s.camelize.split('::')
+        ([version, target] + type).inject(Travis::Api) do |const, name|
+          if const && const.const_defined?(name.to_s.camelize)
+            const.const_get(name)
+          else
+            nil
+          end
+        end
       end
 
       def new(resource, options = {})
